@@ -1,0 +1,14 @@
+SELECT
+replace(case 
+    when input_mint > output_mint then COALESCE(input_symbol, substring(input_mint,1,5)) || '-' || COALESCE(output_symbol, substring(output_mint,1,5))
+    else COALESCE(output_symbol, substring(output_mint,1,5)) || '-' || COALESCE(input_symbol, substring(input_mint,1,5))
+end, 'wrapped SOL','SOL')
+as pair 
+, count(*) as swaps
+, sum(case when block_time >= now() - interval '24' hour then COALESCE(input_usd,output_usd) else null end) as volume_24_hour
+, sum(case when block_time >= now() - interval '7' day then COALESCE(input_usd,output_usd) else null end) as volume_7_day
+, sum(COALESCE(input_usd,output_usd)) as volume_total
+FROM dune.dune.result_jupiter_swap_event sp 
+WHERE tx_signer = '{{wallet}}'
+group by 1
+order by 4 desc
